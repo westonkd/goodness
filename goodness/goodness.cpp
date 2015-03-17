@@ -61,10 +61,10 @@ P(e, enew, T) = 1 if enew < e, exp(-(enew - e)/T) otherwise
 #include <iomanip>
 #include <iostream>
 #include <vector>
-#include <set>
+#include <map>
 #include <string>
 
-#define HASH_SIZE 268435456
+#define HASH_SIZE 1048576
 
 using namespace std;
 
@@ -133,36 +133,43 @@ unsigned int hashCode(string &word)
  *
  * Get the hash code of each word in the file and output as 'hashed'
  *************************************************************************/
-int calcEnergy(string filename)
+double calcEnergy(string filename)
 {
-    //set of unique values
-    set<int> uniqueVals;
-    
-    //total word count
-    int count = 0;
-    
     //open the file
     ifstream fin(filename.c_str());
     
     if (fin.fail())
         return -1;
 
+    map<int,int> collisionRecord;
+    
     int temp;
     
-    //for each word in the file
+    //for each value in the file
     while (fin >> temp)
     {
-        //insert the word into the set
-        uniqueVals.insert(temp);
-        
-        //augment the count by one
-        count++;
+        //if the map does not contains the key
+        if(collisionRecord.count(temp) == 0)
+            collisionRecord[temp] = 0;
+        else
+            collisionRecord[temp] = collisionRecord[temp] + 1;
     }
     
     fin.close();
+    
+    //calculate the average
+    double average = 0;
+    
+    typedef map<int, int>::iterator it_type;
+    for(it_type iterator = collisionRecord.begin(); iterator != collisionRecord.end(); iterator++)
+    {
+        average += iterator->second;
+    }
+    
+    average /= (double) collisionRecord.size();
 
-    //return the difference
-    return count - uniqueVals.size();
+    //return the average collisions
+    return average;
 }
 
 /*************************************************************************
@@ -208,7 +215,7 @@ void runOne(string test)
 void runAll()
 {
     hashFile("words");
-    cout << "Number of collisions: " << calcEnergy("hashed") << endl;
+    cout << "Average number of collisions: " << calcEnergy("hashed") << endl;
 }
 
 /*************************************************************************
