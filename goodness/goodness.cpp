@@ -148,18 +148,14 @@ double calcEnergy(string filename)
     //for each value in the file
     while (fin >> temp)
     {
-        //if the map does not contains the key
+        temp = safteyHash(temp);
+        
+        //if the map does not contain the key
         if(collisionRecord.count(temp) == 0)
             collisionRecord[temp] = 0;
         else
         {
-            //if there was a collision, apply the secondary hash
-            temp = safteyHash(temp);
-            
-            if(collisionRecord.count(temp) == 0)
-                collisionRecord[temp] = 0;
-            else
-                collisionRecord[temp] =  collisionRecord[temp] + 1;
+            collisionRecord[temp] =  collisionRecord[temp] + 1;
         }
     }
     
