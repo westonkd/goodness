@@ -129,7 +129,7 @@ unsigned int hashCode(string &word)
 }
 
 /*************************************************************************
- * hashFile
+ * calcEnergy
  *
  * Get the hash code of each word in the file and output as 'hashed'
  *************************************************************************/
@@ -152,7 +152,15 @@ double calcEnergy(string filename)
         if(collisionRecord.count(temp) == 0)
             collisionRecord[temp] = 0;
         else
-            collisionRecord[temp] = collisionRecord[temp] + 1;
+        {
+            //if there was a collision, apply the secondary hash
+            temp = safteyHash(temp);
+            
+            if(collisionRecord.count(temp) == 0)
+                collisionRecord[temp] = 0;
+            else
+                collisionRecord[temp] =  collisionRecord[temp] + 1;
+        }
     }
     
     fin.close();
