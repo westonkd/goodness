@@ -66,7 +66,9 @@ P(e, enew, T) = 1 if enew < e, exp(-(enew - e)/T) otherwise
 #include <stdlib.h>
 #include <time.h>
 
-#define HASH_SIZE 1048576 //default load factor
+#define LARGE_HASH_SIZE 1048576
+#define MED_HASH_SIZE 32768
+#define SM_HASH_SIZE 1024
 
 using namespace std;
 
@@ -83,19 +85,20 @@ struct State
 };
 
 //Function Prototypes
-double calcEnergy(string filename, State state);
+double calcEnergy(string filename, State state, int size);
 State getNeightbor(State state);
 float pOfAccept(float currentEnergy, float newEnergy, float temp);
+float getTemp(float k, float kmax);
 
 /**********************************************************************
  * anneal
  *  Run the simulated annealing algorithm to find the state wich 
  *  minimizes collisions.
  *********************************************************************/
-State anneal(State s, int kmax, int emax)
+State anneal(State s, int kmax, int emax, int size)
 {
     // Calculate the energy of the initial state
-    float e = calcEnergy("hashed", s);
+    float e = calcEnergy("hashed", s, size);
     
     //'best' initial solution uses Java numbers
     State sbest = s;
@@ -106,25 +109,38 @@ State anneal(State s, int kmax, int emax)
     //energy evaluation count
     int k = 0;
 
-    //while time left and the solution is not good enought
+    cout << "Initial States - " << "e = " << e << " ebest = " << ebest << "k = " << k << endl;
+    cout << "------------------------------------------------------------------------------\n";
+    cout << "------------------------------------------------------------------------------\n";
+    
+    //while time left and the solution is not good enough
     while (k < kmax && e > emax)
     {
-        //        T ← temperature(k/kmax)               // Calculate temperature.
-        float T = 100.0 / ((float)k / (float)kmax);
+        cout << k << "->   ";
+        // Calculate temperature.
+        float T = getTemp(k, kmax);
+        cout << "temp: " << T << "  ";
         
         // Pick some neighbour.
         State snew = getNeightbor(s);
+        cout << '[' << snew.a << " " << snew.b << " " << snew.c << " " << snew.d << "] => ";
         
         // Compute its energy.
-        float enew = calcEnergy("hash", snew);
+        float enew = calcEnergy("hashed", snew, size);
+        cout << enew << " ";
         
         // Should we move to it?
         float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        
+        cout << " P:" << pOfAccept(e, enew, T) << " R:" << random << " ";
         if (pOfAccept(e, enew, T) > random)
         {
             // Yes, change state.
             s = snew;
             e = enew;
+            cout << " changed ";
+        } else {
+            cout << " !change ";
         }
         
         // Is this a new best?
@@ -133,7 +149,14 @@ State anneal(State s, int kmax, int emax)
             // Yes, save 'new neighbour' to 'best found'.
             sbest = snew;
             ebest = enew;
+            cout << " best ";
         }
+        else
+        {
+            cout << " !bes ";
+        }
+        
+        cout << "\n------------------------------------------------------------------------------\n";
         
         k++;
     }
@@ -192,31 +215,65 @@ int safteyHash(unsigned int h, int a, int b, int c, int d)
  *************************************************************************/
 State verifyState(State state, int min, int max)
 {
+//    //check that a is in bounds
+//    if (state.a > max)
+//        state.a = state.a % max;
+//    else if (state.a < min)
+//        state.a = state.a + max;
+//    
+//    //check that b is in bounds
+//    if (state.b > max)
+//        state.b = state.b % max;
+//    else if (state.b < min)
+//        state.b = state.b + max;
+//    
+//    //check that c is in bounds
+//    if (state.c > max)
+//        state.c = state.c % max;
+//    else if (state.c < min)
+//        state.c = state.c + max;
+//    
+//    //check that d is in bounds
+//    if (state.d > max)
+//        state.d = state.d % max;
+//    else if (state.d < min)
+//        state.d = state.d + max;
+
     //check that a is in bounds
     if (state.a > max)
-        state.a = state.a % max;
+        state.a = max;
     else if (state.a < min)
-        state.a = state.a + max;
+        state.a = min;
     
     //check that b is in bounds
     if (state.b > max)
-        state.b = state.b % max;
+        state.b = max;
     else if (state.b < min)
-        state.b = state.b + max;
+        state.b = min;
     
     //check that c is in bounds
     if (state.c > max)
-        state.c = state.c % max;
+        state.c = max;
     else if (state.c < min)
-        state.c = state.c + max;
+        state.c = min;
     
     //check that d is in bounds
     if (state.d > max)
-        state.d = state.d % max;
+        state.d = max;
     else if (state.d < min)
-        state.d = state.d + max;
+        state.d = min;
     
     return state;
+}
+
+/*************************************************************************
+ * getTemp
+ *
+ * calculates the temperature.
+ *************************************************************************/
+float getTemp(float k, float kmax)
+{
+    return 100.0 / (k / kmax);
 }
 
 /*************************************************************************
@@ -227,7 +284,7 @@ State verifyState(State state, int min, int max)
 float pOfAccept(float currentEnergy, float newEnergy, float temp)
 {
     //always accept a better value
-    if (newEnergy > currentEnergy)
+    if (newEnergy < currentEnergy)
         return 1;
     
     //calculate the P. This value gets lower as temperature increases
@@ -305,7 +362,7 @@ unsigned int hashCode(string &word)
  *
  * Get the hash code of each word in the file and output as 'hashed'
  *************************************************************************/
-double calcEnergy(string filename, State state)
+double calcEnergy(string filename, State state, int size)
 {
     //open the file
     ifstream fin(filename.c_str());
@@ -321,9 +378,9 @@ double calcEnergy(string filename, State state)
     while (fin >> temp)
     {
         temp = safteyHash(temp,state.a,state.b,state.c,state.d);
-        temp = indexFor(temp, HASH_SIZE);
+        temp = indexFor(temp, size);
         
-        if (temp >= HASH_SIZE)
+        if (temp >= size)
             cout << "Error" << endl;
         
         //if the map does not contain the key
@@ -346,7 +403,7 @@ double calcEnergy(string filename, State state)
         average += iterator->second;
     }
     
-    cout << "calculated with " << average << " / " << collisionRecord.size() << endl;
+    //cout << "using " << average << " / " << collisionRecord.size() << " = ";
     average /= (double) collisionRecord.size();
 
     //return the average collisions
@@ -386,6 +443,8 @@ void hashFile(string file)
  *************************************************************************/
 void runOne(string test)
 {
+    //seed rand
+    srand(time(NULL));
 }
 
 /*************************************************************************
@@ -395,12 +454,14 @@ void runOne(string test)
  *************************************************************************/
 void runAll()
 {
+    hashFile("words");
     //seed rand
-    srand((long) time(NULL));
+    srand(time(NULL));
     
-    //hashFile("words");
-    State state = {0,0,0,0};
-    cout << "Average number of collisions: " << calcEnergy("hashed", state) << endl;
+    State init = {3, 45, 2, 2};
+    State best = anneal(init, 100, 0, LARGE_HASH_SIZE);
+    cout << "Best was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " " << endl;
+    
 }
 
 /*************************************************************************
