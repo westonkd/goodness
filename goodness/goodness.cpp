@@ -110,16 +110,17 @@ State anneal(State s, int kmax, int emax)
     while (k < kmax && e > emax)
     {
         //        T ← temperature(k/kmax)               // Calculate temperature.
-        float T = (float)k/(float)kmax/(float)100;
+        float T = 100.0 / ((float)k / (float)kmax);
         
         // Pick some neighbour.
         State snew = getNeightbor(s);
         
-        //        enew ← E(snew)                        // Compute its energy.
+        // Compute its energy.
         float enew = calcEnergy("hash", snew);
         
-        //        if P(e, enew, T) > random() then      // Should we move to it?
-        if (pOfAccept(enum, enew, T) > 2)
+        // Should we move to it?
+        float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        if (pOfAccept(e, enew, T) > random)
         {
             // Yes, change state.
             s = snew;
