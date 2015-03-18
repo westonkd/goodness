@@ -63,10 +63,83 @@ P(e, enew, T) = 1 if enew < e, exp(-(enew - e)/T) otherwise
 #include <vector>
 #include <map>
 #include <string>
+#include <stdlib.h>
+#include <time.h>
 
-#define HASH_SIZE 1048576
+#define HASH_SIZE 1048576 //default load factor
 
 using namespace std;
+
+/**********************************************************************
+ * Represents a state for the simulated annearling algorithms.
+ * a,b,c, and d are the values used to shift by in the hash function.
+ *********************************************************************/
+struct State
+{
+    int a;
+    int b;
+    int c;
+    int d;
+};
+
+//Function Prototypes
+double calcEnergy(string filename, State state);
+State getNeightbor(State state);
+float pOfAccept(float currentEnergy, float newEnergy, float temp);
+
+/**********************************************************************
+ * anneal
+ *  Run the simulated annealing algorithm to find the state wich 
+ *  minimizes collisions.
+ *********************************************************************/
+State anneal(State s, int kmax, int emax)
+{
+    // Calculate the energy of the initial state
+    float e = calcEnergy("hashed", s);
+    
+    //'best' initial solution uses Java numbers
+    State sbest = s;
+    
+    //energy of the initial best solution
+    float ebest = e;
+    
+    //energy evaluation count
+    int k = 0;
+
+    //while time left and the solution is not good enought
+    while (k < kmax && e > emax)
+    {
+        //        T ← temperature(k/kmax)               // Calculate temperature.
+        float T = (float)k/(float)kmax/(float)100;
+        
+        // Pick some neighbour.
+        State snew = getNeightbor(s);
+        
+        //        enew ← E(snew)                        // Compute its energy.
+        float enew = calcEnergy("hash", snew);
+        
+        //        if P(e, enew, T) > random() then      // Should we move to it?
+        if (pOfAccept(enum, enew, T) > 2)
+        {
+            // Yes, change state.
+            s = snew;
+            e = enew;
+        }
+        
+        // Is this a new best?
+        if (enew < ebest)
+        {
+            // Yes, save 'new neighbour' to 'best found'.
+            sbest = snew;
+            ebest = enew;
+        }
+        
+        k++;
+    }
+
+    //return the best state
+    return sbest;
+}
 
 /**********************************************************************
  * toUnsignedString
@@ -91,18 +164,115 @@ string toUnsignedString(unsigned int i)
    return string(buf, 32);
 }
 
+int indexFor(int h, int length)
+{
+    return h & (length-1);
+}
+
 /*************************************************************************
- * hash
- *
+ * safteyHash
+ * A secondary hashing function that is applied to all values to be hashed.
  *
  *************************************************************************/
-int safteyHash(unsigned int h)
+int safteyHash(unsigned int h, int a, int b, int c, int d)
 {
     // This function ensures that hashCodes that differ only by
     // constant multiples at each bit position have a bounded
     // number of collisions (approximately 8 at default load factor).
-    h = h ^ (h >> 20) ^ (h >> 12);
-    return h ^ (h >> 7) ^ (h >> 4);
+    h = h ^ (h >> a) ^ (h >> b);
+    return h ^ (h >> c) ^ (h >> d);
+}
+
+/*************************************************************************
+ * verifyState
+ *
+ * verifies the values in a state are within specified bounds. If 
+ * a value is over or under max or min, the number wraps around.
+ *************************************************************************/
+State verifyState(State state, int min, int max)
+{
+    //check that a is in bounds
+    if (state.a > max)
+        state.a = state.a % max;
+    else if (state.a < min)
+        state.a = state.a + max;
+    
+    //check that b is in bounds
+    if (state.b > max)
+        state.b = state.b % max;
+    else if (state.b < min)
+        state.b = state.b + max;
+    
+    //check that c is in bounds
+    if (state.c > max)
+        state.c = state.c % max;
+    else if (state.c < min)
+        state.c = state.c + max;
+    
+    //check that d is in bounds
+    if (state.d > max)
+        state.d = state.d % max;
+    else if (state.d < min)
+        state.d = state.d + max;
+    
+    return state;
+}
+
+/*************************************************************************
+ * pOfAccept
+ *
+ * calculates the probability of accepting a state with less energy.
+ *************************************************************************/
+float pOfAccept(float currentEnergy, float newEnergy, float temp)
+{
+    //always accept a better value
+    if (newEnergy > currentEnergy)
+        return 1;
+    
+    //calculate the P. This value gets lower as temperature increases
+    return exp((newEnergy - currentEnergy) * -1 / temp);
+}
+
+/*************************************************************************
+ * getNeighbor
+ *
+ * returns a random neightbor of state
+ *************************************************************************/
+State getNeightbor(State state)
+{
+    //get a random number between 0 and 3
+    int varToChange = rand() % 4;
+    
+    //increment varToChange or decrement?
+    bool increment = rand() % 2;
+    
+    //choose a value between 1 and 6 to add to the variable.
+    //We want our niehgbor to be somewhat close.
+    int toAdd = rand() % 6 + 1;
+    
+    //make the change
+    switch(varToChange)
+    {
+        case 0:
+            state.a = increment ? state.a + toAdd : state.a - toAdd;
+            break;
+        case 1:
+            state.b = increment ? state.b + toAdd : state.b - toAdd;
+            break;
+        case 2:
+            state.c = increment ? state.c + toAdd : state.c - toAdd;
+            break;
+        case 3:
+            state.d = increment ? state.d + toAdd : state.d - toAdd;
+            break;
+        default:
+            assert(false); //we should never get here!
+    }
+    
+    //verify all values are in bounds
+    state = verifyState(state, 0, 31);
+    
+    return state;
 }
 
 /**********************************************************************
@@ -123,9 +293,10 @@ unsigned int hashCode(string &word)
    for (int i = 0; i < word.length(); i++)
    {
       h = 31 * h + word[i]; // GOOD
+             //h += word[i]; // BAD!
    }
     
-   return h % HASH_SIZE;
+   return h;
 }
 
 /*************************************************************************
@@ -133,7 +304,7 @@ unsigned int hashCode(string &word)
  *
  * Get the hash code of each word in the file and output as 'hashed'
  *************************************************************************/
-double calcEnergy(string filename)
+double calcEnergy(string filename, State state)
 {
     //open the file
     ifstream fin(filename.c_str());
@@ -143,12 +314,16 @@ double calcEnergy(string filename)
 
     map<int,int> collisionRecord;
     
-    int temp;
+    unsigned int temp;
     
     //for each value in the file
     while (fin >> temp)
     {
-        temp = safteyHash(temp);
+        temp = safteyHash(temp,state.a,state.b,state.c,state.d);
+        temp = indexFor(temp, HASH_SIZE);
+        
+        if (temp >= HASH_SIZE)
+            cout << "Error" << endl;
         
         //if the map does not contain the key
         if(collisionRecord.count(temp) == 0)
@@ -170,6 +345,7 @@ double calcEnergy(string filename)
         average += iterator->second;
     }
     
+    cout << "calculated with " << average << " / " << collisionRecord.size() << endl;
     average /= (double) collisionRecord.size();
 
     //return the average collisions
@@ -218,8 +394,12 @@ void runOne(string test)
  *************************************************************************/
 void runAll()
 {
-    hashFile("words");
-    cout << "Average number of collisions: " << calcEnergy("hashed") << endl;
+    //seed rand
+    srand((long) time(NULL));
+    
+    //hashFile("words");
+    State state = {0,0,0,0};
+    cout << "Average number of collisions: " << calcEnergy("hashed", state) << endl;
 }
 
 /*************************************************************************
