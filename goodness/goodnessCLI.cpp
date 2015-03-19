@@ -17,8 +17,8 @@ using namespace std;
  *************************************************************************/
 void learned();
 void usage(const char *);
-void runAll();
-void runOne(string);
+void runAll(string filename = "words");
+void runOne(string, string filename = "words");
 
 /**************************************************************
  * main looks at its command-line parameters.

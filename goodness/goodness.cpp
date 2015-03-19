@@ -73,7 +73,7 @@ P(e, enew, T) = 1 if enew < e, exp(-(enew - e)/T) otherwise
 using namespace std;
 
 /**********************************************************************
- * Represents a state for the simulated annearling algorithms.
+ * Represents a state for the simulated annearling algorithm.
  * a,b,c, and d are the values used to shift by in the hash function.
  *********************************************************************/
 struct State
@@ -84,7 +84,9 @@ struct State
     int d;
 };
 
-//Function Prototypes
+/*************************************************************************
+ * Function prototypes
+ *************************************************************************/
 double calcEnergy(string filename, State state, int size);
 State getNeightbor(State state);
 float pOfAccept(float currentEnergy, float newEnergy, float temp);
@@ -95,7 +97,7 @@ float getTemp(float k, float kmax);
  *  Run the simulated annealing algorithm to find the state wich 
  *  minimizes collisions.
  *********************************************************************/
-State anneal(State s, int kmax, int emax, int size, bool verbose = false)
+State anneal(State s, int kmax, float emax, int size, bool verbose = false)
 {
     // Calculate the energy of the initial state
     float e = calcEnergy("hashed", s, size);
@@ -421,19 +423,22 @@ double calcEnergy(string filename, State state, int size)
 /*************************************************************************
  * hashFile
  *
- * Get the hash code of each word in the file and output as 'hashed'
+ * Get the hash code of each word in the file and output in 'hashed' file
  *************************************************************************/
-void hashFile(string file)
+bool hashFile(string file)
 {
+    //open the files
     ifstream fin(file.c_str());
     ofstream fout("hashed");
     
+    //if IO failure
     if (fin.fail() || fout.fail())
     {
         cout << "Error, could not find '" + file + "'\n";
-        return;
+        return false;
     }
     
+    //run each word through initial hash and save it to 'hashed'
     string word;
     while (fin >> word)
     {
@@ -442,17 +447,100 @@ void hashFile(string file)
     
     fin.close();
     fout.close();
+    
+    return true;
+}
+
+/*************************************************************************
+ * largeTest
+ *
+ * Run simulated annealing with the largest hash size
+ *************************************************************************/
+void largeTest(State init, State java)
+{
+    cout << "Test with hash size of " << LARGE_HASH_SIZE << endl;
+    
+    //run the simulated annealing for largest hash size and output results
+    State best = anneal(init, 100, 0.1, LARGE_HASH_SIZE, true);
+    
+    //output the best state and energy
+    cout << "\nBest state was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
+    cout << calcEnergy("hashed", best, LARGE_HASH_SIZE) << endl;
+    
+    //output the java default values and energy
+    cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
+    cout << calcEnergy("hashed", java, LARGE_HASH_SIZE);
+}
+
+/*************************************************************************
+ * medTest
+ *
+ * Run simulated annealing with the medium hash size
+ *************************************************************************/
+void medTest(State init, State java)
+{
+    cout << "\nTest with hash size of " << MED_HASH_SIZE << endl;
+    
+    //run the simulated annealing for largest hash size and output results
+    State best = anneal(init, 100, 0.1, MED_HASH_SIZE, true);
+    
+    //output the best state and energy
+    cout << "\nBest state was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
+    cout << calcEnergy("hashed", best, MED_HASH_SIZE) << endl;
+    
+    //output the java default values and energy
+    cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
+    cout << calcEnergy("hashed", java, MED_HASH_SIZE);
+}
+
+/*************************************************************************
+ * smallTest
+ *
+ * Run simulated annealing with the smallest hash size
+ *************************************************************************/
+void smallTest(State init, State java)
+{
+    cout << "\nTest with hash size of " << SM_HASH_SIZE << endl;
+    
+    //run the simulated annealing for largest hash size and output results
+    State best = anneal(init, 100, 0.1, SM_HASH_SIZE, true);
+    
+    //output the best state and energy
+    cout << "\nBest state was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
+    cout << calcEnergy("hashed", best, SM_HASH_SIZE) << endl;
+    
+    //output the java default values and energy
+    cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
+    cout << calcEnergy("hashed", java, SM_HASH_SIZE);
 }
 
 /*************************************************************************
  * runOne
  *
- * Runs one test.
+ * Runs one using the largest hash size
  *************************************************************************/
-void runOne(string test)
+void runOne(string test, string fileName = "words")
 {
     //seed rand
     srand(time(NULL));
+    
+    //hash the specified file
+    hashFile(fileName);
+    
+    //create the initial state and java's default state
+    State init = {20, 0, 1, 31};
+    State java = {20, 12, 7, 4};
+    
+    if (test == "small")
+        smallTest(init, java);
+    else if (test == "medium")
+        medTest(init, java);
+    else if (test == "large")
+        largeTest(init, java);
+    else if (test == "bad")
+        cout << "bad";
+    else
+        cout << "Error: could not find test '" + test + "'\n";
 }
 
 /*************************************************************************
@@ -460,21 +548,28 @@ void runOne(string test)
  *
  * Runs all tests.
  *************************************************************************/
-void runAll()
+void runAll(string fileName = "words")
 {
-    hashFile("words");
-    
     //seed rand
     srand(time(NULL));
     
+    //create the two initial states
     State init = {20, 0, 1, 31};
     State java = {20, 12, 7, 4};
-    State best = anneal(init, 2000, 0, LARGE_HASH_SIZE, true);
-    cout << "\nBest was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
-    cout << calcEnergy("hashed", best, LARGE_HASH_SIZE) << endl;
     
-    cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
-    cout << calcEnergy("hashed", java, LARGE_HASH_SIZE);
+    //hash the specified file
+    hashFile(fileName);
+    
+    //run the large test
+    largeTest(init, java);
+    
+    //run the medium test
+    medTest(init, java);
+    
+    //run the small test
+    smallTest(init, java);
+    
+    //run test with large size and bad hashing algorithm
 }
 
 /*************************************************************************
@@ -484,6 +579,25 @@ void runAll()
  *************************************************************************/
 void usage(const char * programName)
 {
+    //all tests
+    cout << programName << " all";
+    cout << "\trun all tests";
+    
+    //small test
+    cout << programName << " small";
+    cout << "\trun simulated annealing test for small hash size";
+    
+    //medium test
+    cout << programName << " medium";
+    cout << "\trun simulated annealing test for medium hash size";
+    
+    //large test
+    cout << programName << " large";
+    cout << "\trun simulated annealing test for large hash size";
+    
+    //bad test
+    cout << programName << " bad";
+    cout << "\trun simulated annealing test for test with bad initial hashing algorithm";
 }
 
 /*************************************************************************
