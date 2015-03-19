@@ -95,7 +95,7 @@ float getTemp(float k, float kmax);
  *  Run the simulated annealing algorithm to find the state wich 
  *  minimizes collisions.
  *********************************************************************/
-State anneal(State s, int kmax, int emax, int size)
+State anneal(State s, int kmax, int emax, int size, bool verbose = false)
 {
     // Calculate the energy of the initial state
     float e = calcEnergy("hashed", s, size);
@@ -108,39 +108,45 @@ State anneal(State s, int kmax, int emax, int size)
     
     //energy evaluation count
     int k = 0;
-
-    cout << "Initial States - " << "e = " << e << " ebest = " << ebest << "k = " << k << endl;
-    cout << "------------------------------------------------------------------------------\n";
-    cout << "------------------------------------------------------------------------------\n";
+    
+    if (verbose)
+        cout << setw(5) << k << " " << setw(10) << " - " << " " << "[" <<  setw(2) << sbest.a << " " << setw(2) << sbest.b << " " << setw(2) << sbest.c << " " << setw(2) << sbest.d << "] "  << setw(10) << ebest << endl;
     
     //while time left and the solution is not good enough
     while (k < kmax && e > emax)
     {
-        cout << k << "->   ";
+        if (verbose)
+            cout << setw(5) << k << " ";
+        
         // Calculate temperature.
         float T = getTemp(k, kmax);
-        cout << "temp: " << T << "  ";
+        
+        if (verbose)
+            cout << setw(10) << T << " ";
         
         // Pick some neighbour.
         State snew = getNeightbor(s);
-        cout << '[' << snew.a << " " << snew.b << " " << snew.c << " " << snew.d << "] => ";
+        
+        if (verbose)
+            cout << "[" <<  setw(2) << snew.a << " " << setw(2) << snew.b << " " << setw(2) << snew.c << " " << setw(2) << snew.d << "] ";
         
         // Compute its energy.
         float enew = calcEnergy("hashed", snew, size);
-        cout << enew << " ";
+        
+        if (verbose)
+            cout << setw(10) << enew;
         
         // Should we move to it?
         float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         
-        cout << " P:" << pOfAccept(e, enew, T) << " R:" << random << " ";
+        if (verbose)
+            cout << setw(12) << pOfAccept(e, enew, T);
+            
         if (pOfAccept(e, enew, T) > random)
         {
             // Yes, change state.
             s = snew;
             e = enew;
-            cout << " changed ";
-        } else {
-            cout << " !change ";
         }
         
         // Is this a new best?
@@ -149,14 +155,12 @@ State anneal(State s, int kmax, int emax, int size)
             // Yes, save 'new neighbour' to 'best found'.
             sbest = snew;
             ebest = enew;
-            cout << " best ";
+            cout << setw(10) << " accepted" << endl;
         }
         else
         {
-            cout << " !bes ";
+            cout << endl;
         }
-        
-        cout << "\n------------------------------------------------------------------------------\n";
         
         k++;
     }
@@ -188,7 +192,11 @@ string toUnsignedString(unsigned int i)
    return string(buf, 32);
 }
 
-int indexFor(int h, int length)
+/*************************************************************************
+ * TODO
+ *
+ *************************************************************************/
+long indexFor(long h, int length)
 {
     return h & (length-1);
 }
@@ -198,7 +206,7 @@ int indexFor(int h, int length)
  * A secondary hashing function that is applied to all values to be hashed.
  *
  *************************************************************************/
-int safteyHash(unsigned int h, int a, int b, int c, int d)
+long safteyHash(unsigned long h, int a, int b, int c, int d)
 {
     // This function ensures that hashCodes that differ only by
     // constant multiples at each bit position have a bounded
@@ -262,7 +270,7 @@ State verifyState(State state, int min, int max)
         state.d = max;
     else if (state.d < min)
         state.d = min;
-    
+//
     return state;
 }
 
@@ -370,9 +378,9 @@ double calcEnergy(string filename, State state, int size)
     if (fin.fail())
         return -1;
 
-    map<int,int> collisionRecord;
+    map<unsigned long, int> collisionRecord;
     
-    unsigned int temp;
+    unsigned long temp;
     
     //for each value in the file
     while (fin >> temp)
@@ -397,7 +405,7 @@ double calcEnergy(string filename, State state, int size)
     //calculate the average
     double average = 0;
     
-    typedef map<int, int>::iterator it_type;
+    typedef map<unsigned long, int>::iterator it_type;
     for(it_type iterator = collisionRecord.begin(); iterator != collisionRecord.end(); iterator++)
     {
         average += iterator->second;
@@ -422,7 +430,7 @@ void hashFile(string file)
     
     if (fin.fail() || fout.fail())
     {
-        cerr << "Error reading file";
+        cout << "Error, could not find '" + file + "'\n";
         return;
     }
     
@@ -455,13 +463,18 @@ void runOne(string test)
 void runAll()
 {
     hashFile("words");
+    
     //seed rand
     srand(time(NULL));
     
-    State init = {3, 45, 2, 2};
-    State best = anneal(init, 100, 0, LARGE_HASH_SIZE);
-    cout << "Best was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " " << endl;
+    State init = {20, 0, 1, 31};
+    State java = {20, 12, 7, 4};
+    State best = anneal(init, 2000, 0, LARGE_HASH_SIZE, true);
+    cout << "\nBest was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
+    cout << calcEnergy("hashed", best, LARGE_HASH_SIZE) << endl;
     
+    cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
+    cout << calcEnergy("hashed", java, LARGE_HASH_SIZE);
 }
 
 /*************************************************************************
