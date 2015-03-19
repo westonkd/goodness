@@ -580,24 +580,24 @@ void runAll(string fileName = "words")
 void usage(const char * programName)
 {
     //all tests
-    cout << programName << " all";
-    cout << "\trun all tests";
+    cout << programName << " all\n";
+    cout << "\trun all tests\n";
     
     //small test
-    cout << programName << " small";
-    cout << "\trun simulated annealing test for small hash size";
+    cout << programName << " small\n";
+    cout << "\trun simulated annealing test for small hash size\n\n";
     
     //medium test
-    cout << programName << " medium";
-    cout << "\trun simulated annealing test for medium hash size";
+    cout << programName << " medium\n";
+    cout << "\trun simulated annealing test for medium hash size\n\n";
     
     //large test
-    cout << programName << " large";
-    cout << "\trun simulated annealing test for large hash size";
+    cout << programName << " large\n";
+    cout << "\trun simulated annealing test for large hash size\n\n";
     
     //bad test
-    cout << programName << " bad";
-    cout << "\trun simulated annealing test for test with bad initial hashing algorithm";
+    cout << programName << " bad\n";
+    cout << "\trun simulated annealing test for test with bad initial hashing algorithm\n";
 }
 
 /*************************************************************************
