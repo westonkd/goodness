@@ -588,6 +588,11 @@ void usage(const char * programName)
  *************************************************************************/
 void learned()
 {
-    cout << "I got the double dose of this algorithm both in AI and in this class! It was quite interesting to see how well something so random can work. I spent a long time ";
+    cout << "I got the double dose of this algorithm both in AI and in this class! It was quite interesting to see how well something so random can work. I spent a long time simply trying to understand the algorithm which I felt was especially benefit's. Although I had the general idea of how the algorithm worked it turned out that there was a lot of difficulty in the details. I think the first thing to trip us up was understanding how the bit operations did things especially the \"&\" symbol. The bit shifting took some convincing as well but after drawing a lot of 0's and 1's on the whiteboard we got it down. \n\n"
+
+       << "The next challenge that we faced was being able to understand exactly how simulated annealing worked. I understood that the algorithm would be transition from accepting to greedy as the temperature cooled but I didn't know if that meant rejecting good values it appears that it didn't. It turned out that it was always greedy but sometimes if it couldn't find a better value it would take it depending on how generous it was feeling at the time. Kind of like how when your a kid on Halloween and at first you'll take just about any candy even though chocolate is your favorite but as night wears on you start to only want chocolate and are more willing to reject taffy taffy for instance, until at the end all you will accept almond joys because you've finally seen the light. There you go, an analogy for a future class.\n\n"
+
+       << "Anyway, as the time went on we worked through our various problems (I helped two people figure out how to get rand() to return back different numbers) I think I realized that my favorite part was not the programming aspect of it, but understanding why Simulated Annealing was so useful and helping people to see the big picture. I really liked to see an algorithm that could take a huge search space and find the global maximums (or at least pretty good maximums) without having to do an exhaustive search. I can defiantly see how this algorithm could be very useful in \"big data\" which I'm rather interested in. So in short, I approve of this exploration and look forward to future ones.\n\n"
+       << " ~ Gage\n\n";
 }
 
