@@ -3,55 +3,11 @@
  *    Goodness -- Exploring Iterative Improvement
  *
  * Author:
- *    Brother Neff
+ *    Gage Peterson (with a lot of help from Weston and Chad)
  *
  * Summary:
  *    A program to experiment with Simulated Annealing.
  *************************************************************************/
-#if 0
-The simulated annealing algorithm, courtesy The Web:
-----------------------------------------------------------------------------
-1. Choose an initial state (random numbers?)
-2. On each iteration, choose a move to another (neighbouring) state.
-3. If that move reduces the "energy" (improves the situation) then the
-algorithm takes that move.
-4. Otherwise, it takes the move with a computed probability that
-decreases over time.
-(Hence early on the algorithm will tend to take moves even if they
- do not improve the situation.
- Later on, the algorithm will only make moves that improve the
- situation.)
-5. Use the temperature function T(n) = 100 / n where n is the iteration
-number.
-6. Allow a move with negative impact with probability P(dE) = exp(dE/T)
-where dE is the difference in energy and T is the temperature for the
-iteration.
-----------------------------------------------------------------------------
-s ← s0; e ← E(s)                        // Initial state, energy.
-sbest ← s; ebest ← e                    // Initial "best" solution
-k ← 0                                   // Energy evaluation count.
-while k < kmax and e > emax             // While time left and not good enough:
-T ← temperature(k/kmax)               // Calculate temperature.
-snew ← neighbour(s)                   // Pick some neighbour.
-enew ← E(snew)                        // Compute its energy.
-if P(e, enew, T) > random() then      // Should we move to it?
-s ← snew; e ← enew                  // Yes, change state.
-if enew < ebest then                  // Is this a new best?
-sbest ← snew; ebest ← enew          // Yes, save 'new neighbour' to 'best found'.
-k ← k + 1                             // One more evaluation done
-return sbest                            // Return the best solution found.
-----------------------------------------------------------------------------
-Start from a state s0 and continue to either a maximum of kmax
-steps or until a state with an energy of emax or less is found. In the
-process, the call neighbour(s) should generate a randomly chosen
-neighbour of a given state s; the call random() should return a random
-value in the range [0, 1]. The annealing schedule is defined by the call
-temperature(r), which should yield the temperature to use, given the
-fraction r of the time budget that has been expended so far.
-
-P(e, enew, T) = 1 if enew < e, exp(-(enew - e)/T) otherwise
-----------------------------------------------------------------------------
-#endif
 
 #include <cassert>
 #include <cmath>
@@ -73,7 +29,7 @@ P(e, enew, T) = 1 if enew < e, exp(-(enew - e)/T) otherwise
 using namespace std;
 
 /**********************************************************************
- * Represents a state for the simulated annearling algorithm.
+ * Represents a state for the simulated annealing algorithm.
  * a,b,c, and d are the values used to shift by in the hash function.
  *********************************************************************/
 struct State
@@ -340,8 +296,7 @@ unsigned int hashCode(string &word)
     unsigned int h = 0;
     for (int i = 0; i < word.length(); i++)
     {
-        h = 31 * h + word[i]; // GOOD
-        //h += word[i]; // BAD!
+        h = 31 * h + word[i];
     }
     
     return h;
@@ -408,8 +363,6 @@ double calcEnergy(string filename, State state, int size)
         average += iterator->second;
     }
     
-    //average /= (double) collisionRecord.size();
-    
     return average;
 }
 
@@ -460,7 +413,7 @@ void largeTest(State init, State java, bool verbose = true)
     cout << "\nBest state was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
     cout << " collisions = " << calcEnergy("hashed", best, LARGE_HASH_SIZE) << endl;
     
-    //output the java default values and energy
+    //output the Java default values and energy
     cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
     cout << " collisions = " << calcEnergy("hashed", java, LARGE_HASH_SIZE) << endl << endl;
 }
@@ -502,7 +455,7 @@ void smallTest(State init, State java, bool verbose = true)
     cout << "\nBest state was: " << best.a << " " << best.b << " " << best.c << " " << best.d << " ";
     cout << " collisions = " << calcEnergy("hashed", best, SM_HASH_SIZE) << endl;
     
-    //output the java default values and energy
+    //output the Java default values and energy
     cout << "Java was: " << java.a << " " << java.b << " " << java.c << " " << java.d << " ";
     cout << " collisions = " << calcEnergy("hashed", java, SM_HASH_SIZE) << endl << endl;
 }
@@ -635,18 +588,6 @@ void usage(const char * programName)
  *************************************************************************/
 void learned()
 {
-    cout << "\nAfter reading “Algorithm of the Gods” and discussing simulated annealing in class, I felt like I had a good grasp on what the algorithm could do. Understanding how hashing in Java works took the longest time to study, but was something I was grateful to learn.\n\n";
-    
-    cout << "Implementing the code also went well. After researching simulated annealing and writing the algorithm I can honestly say that I learned how it works well enough to teach it to others. I was actually so excited that I explained how the algorithm works to my wife. She was very kind but not nearly as enthused.\n\n";
-    
-    cout << "I learned that, unlike a greedy algorithm, simulated annealing works in the beginning by ‘exploring’ the solution set and then becomes more and more greedy as the temperature cools. It is necessary to compute the ‘energy’ of neighboring states and then choose a good neighbor to move to. A good decision does not mean the neighbor with the lowest energy- accepting higher values in the beginning will help find the global minimum without being trapped at local minima. The temperature variable is used to help calculate the probability of accepting a state with higher energy. As the temperature cools the probability decreases to zero. This helps the algorithm to find the true global minimum.\n\n";
-    
-    cout << "To choose a neighbor the algorithm randomly selects a value in the state to change (a, b, or c). Once a number to change is chosen the algorithm adds a random number between -5 and 5 to that number. It makes sure the new state is in bounds and then returns it.\n\n";
-    
-    cout << "The tests I implemented run the annealing algorithm at three different load factors. The first hash size is 2^25, the second is 2^20, and the third is 2^15. As expected the tests show the average number of collisions is inversely proportional to the number of buckets. I ran these tests several times to obtain an optimum set of numbers. I also created a version of the program that calculates energy based on the average number of collisions per bucket rather than the total collision count. This test showed that the difference between the Java default values and other, better values is very small.\n";
-    
-    cout << "I tested the good initial algorithm compared with the bad initial algorithm. Because the hash codes are 32 bit numbers, the good algorithm multiplies ‘h’ by 31 before adding the letter value. This helps widen the spread of hash codes. Running this particular test made it clear that the good hashing algorithm is much better.\n\n";
-    
-    cout << "While the numbers I calculated as ideal shifting values varied, I was consistently able to find better values than the Java default choices. One such set is [5 10 2 23] which had 616 fewer collisions than the Java defaults. Other results were [31 16 6 27] and [3 2 19 31].\n\n";
+    cout << "I got the double dose of this algorithm both in AI and in this class! It was quite interesting to see how well something so random can work. I spent a long time ";
 }
 
