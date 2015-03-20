@@ -1,0 +1,17 @@
+Test with hash size of 33554432
+
+Best state was: 22 2 12 26  energy = 0.0079573
+Java was: 20 12 7 4  energy = 0.00848904
+
+
+Test with hash size of 1048576
+
+Best state was: 25 3 2 17  energy = 0.24477
+Java was: 20 12 7 4  energy = 0.24708
+
+
+Test with hash size of 32768
+
+Best state was: 20 1 1 31  energy = 13.6432
+Java was: 20 12 7 4  energy = 13.6432
+
